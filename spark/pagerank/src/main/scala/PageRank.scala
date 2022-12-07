@@ -1,8 +1,6 @@
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
-import scala.util.Using
-
 
 object PageRank {
   def pageRank(
@@ -67,24 +65,22 @@ object PageRank {
     val edgesPath = args(1)
     val topK = if (args.length > 2) args(2).toInt else 5
 
-    Using(
-      SparkSession
+    val spark:SparkSession = SparkSession
         .builder
         .appName("PageRank")
         .getOrCreate()
-    ) { 
-      spark =>
-      spark.sparkContext.setLogLevel("ERROR")
-      val startTimeMillis = System.currentTimeMillis()
-      val ranks = pageRank(spark, verticesPath, edgesPath)
-      val endTimeMillis = System.currentTimeMillis()
-      val topKRanks = ranks.sortBy(_._2, ascending = false).take(topK)
-      println(s"time taken: ${endTimeMillis - startTimeMillis}")
-      topKRanks.foreach {
-        case (vertexID, rank) => {
-          println(s"paper id: ${vertexID}\tpage-rank: ${"%.5f".format(rank)}")
-        }
+  
+    spark.sparkContext.setLogLevel("OFF")
+    val startTimeMillis = System.currentTimeMillis()
+    val ranks = pageRank(spark, verticesPath, edgesPath)
+    val endTimeMillis = System.currentTimeMillis()
+    val topKRanks = ranks.sortBy(_._2, ascending = false).take(topK)
+    println(s"time taken: ${endTimeMillis - startTimeMillis}")
+    topKRanks.foreach {
+      case (vertexID, rank) => {
+        println(s"paper id: ${vertexID}\tpage rank: ${"%.5f".format(rank)}")
       }
+      
     }
   }
 }
