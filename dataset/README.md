@@ -18,3 +18,4 @@ source .venv/bin/activate
 ```bash
 python parser.py
 ```
+data parsed for spark will be created under ./spark

@@ -29,7 +29,7 @@ class Partitioner:
                 curr_year_edges_path.open(mode="w") as e:
                 verts = set()
                 for src, date in self.node_dates:
-                    if date.year < year + 1:
+                    if date.year >= year + 1:
                         continue
                     if src not in self.src_dst:
                         src = int(str(src).removeprefix("11"))
