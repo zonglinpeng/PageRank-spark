@@ -6,10 +6,12 @@ import shutil
 
 EDGES_FILENAME = "cit-HepPh.txt"
 NODES_DATES_FILENAME = "cit-HepPh-dates.txt"
-BATCH_DIR = "spark"
+DATA_DIR = "asset"
+SPARK_DIR = "spark"
+TIMELY_DIR = "timely"
 
 class Partitioner:
-    def __init__(self, edgesPath: str, node_date_path: str) -> None:
+    def __init__(self, edgesPath: str, node_date_path: str):
         edgesPath = Path(edgesPath)
         node_date_path = Path(node_date_path)
         self.src_dst = Partitioner.parse_edges(edgesPath)
@@ -18,39 +20,43 @@ class Partitioner:
         )
         self.years = sorted(set(date.year for _, date in self.node_dates))
 
-    def spark(self, path: str = None) -> None:
-        path = Path(path) if path else Path.cwd() / BATCH_DIR
+    def parse(self, path: str = None):
+        path = Path(path) if path else Path.cwd() / DATA_DIR
         shutil.rmtree(path.absolute().as_posix(), ignore_errors=True)
         path.mkdir(parents=True, exist_ok=True)
         for year in self.years:
-            curr_year_verts_path = path / f"{year}-verts.txt"
-            curr_year_edges_path = path / f"{year}-edges.txt"
-            with curr_year_verts_path.open(mode="w") as v, \
-                curr_year_edges_path.open(mode="w") as e:
-                verts = set()
-                for src, date in self.node_dates:
-                    if date.year >= year + 1:
-                        continue
+            spark_data = itertools.takewhile(lambda x: x[1].year < year + 1, self.node_dates)
+            self.process(year, path, spark_data, "spark")
+        for year, group in itertools.groupby(self.node_dates, key=lambda x: x[1].year):
+            self.process(year, path, group, "timely")
+            
+    def process(self, year, path, group, target):
+        curr_year_verts_path = path / f"{year}-{target}-verts.txt"
+        curr_year_edges_path = path / f"{year}-{target}-edges.txt"
+        with curr_year_edges_path.open(mode="w") as e, \
+            curr_year_verts_path.open(mode="w") as v:
+            verts = set()
+            for src, _ in group:
+                if src not in self.src_dst:
+                    src = int(str(src).removeprefix("11"))
                     if src not in self.src_dst:
-                        src = int(str(src).removeprefix("11"))
-                        if src not in self.src_dst:
-                            continue
-                    verts.add(src)
-                    for dst in self.src_dst[src]:
-                        verts.add(dst)
-                        e.write(f"{src} {dst}\n")
-                for vert in verts:
-                    v.write(f"{vert}\n")
-                    
+                        continue
+                verts.add(src)
+                for dst in self.src_dst[src]:
+                    verts.add(dst)
+                    e.write(f"{src} {dst}\n")
+            for vert in verts:
+                v.write(f"{vert}\n")
+                            
     @staticmethod
-    def from_default(path: str = None) -> "Partitioner":
+    def from_default(path: str = None):
         path = Path(path) if path else Path.cwd()
         node_date_path = (path / NODES_DATES_FILENAME).absolute().as_posix()
         edgesPath = (path / EDGES_FILENAME).absolute().as_posix()
         return Partitioner(edgesPath, node_date_path)
 
     @staticmethod
-    def parse_edges(path: Path) -> dict[str, list[str]]:
+    def parse_edges(path: Path):
         src_dst = defaultdict(list)
         nodes = set()
         with path.open(mode="r") as f:
@@ -89,4 +95,4 @@ class Partitioner:
 
 if __name__ == "__main__":
     partitioner = Partitioner.from_default()
-    partitioner.spark()
+    partitioner.parse()

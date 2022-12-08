@@ -39,8 +39,8 @@ spark-submit \
   --deploy-mode "client" \
   --master "local[1]" \
   "${ROOT}/spark/pagerank/target/scala-2.13/pagerank-assembly-1.0.0.jar" \
-  "${ROOT}/dataset/spark/1997-verts.txt" \
-  "${ROOT}/dataset/spark/1997-edges.txt" \
+  "${ROOT}/dataset/asset/1997-spark-verts.txt" \
+  "${ROOT}/dataset/asset/1997-spark-edges.txt" \
   5
 ```
 
@@ -53,8 +53,8 @@ do spark-submit \
   --deploy-mode "client" \
   --master "local[1]" \
   "${ROOT}/spark/pagerank/target/scala-2.13/pagerank-assembly-1.0.0.jar" \
-  "${ROOT}/dataset/spark/${Y}-verts.txt" \
-  "${ROOT}/dataset/spark/${Y}-edges.txt" \
+  "${ROOT}/dataset/asset/${Y}-spark-verts.txt" \
+  "${ROOT}/dataset/asset/${Y}-spark-edges.txt" \
   5 >> log.txt;
 done;
 ```
